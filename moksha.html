@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moksha AI: Universal Dharma Guide</title>
+    <script src="https://cdn.jsdelivr.net/npm/@google/genai@0.2.1/dist/index.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* Light sand/saffron background */
+        }
+        .moksha-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .om-symbol {
+            font-size: 8rem;
+            line-height: 1;
+            color: #ffbf00; /* Deep Saffron/Amber */
+            text-shadow: 0 4px 6px rgba(128, 0, 0, 0.4);
+            animation: pulse 4s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .input-area {
+            min-height: 150px;
+            background-color: #fff8e8;
+            border: 2px solid #ffbf00;
+            transition: all 0.3s;
+        }
+        .input-area:focus {
+            border-color: #800000;
+            box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.2);
+        }
+        .seek-button {
+            background-color: #800000; /* Deep Maroon */
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .seek-button:hover {
+            background-color: #a02040;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(128, 0, 0, 0.3);
+        }
+        .loading-bar {
+            overflow: hidden;
+            height: 4px;
+            background-color: #ffbf0050;
+            border-radius: 2px;
+        }
+        .loading-bar-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #800000;
+            animation: loading-animation 1.5s infinite linear;
+            transform-origin: left;
+        }
+        @keyframes loading-animation {
+            0% { transform: translateX(-100%) scaleX(0); }
+            50% { transform: translateX(0) scaleX(1); }
+            100% { transform: translateX(100%) scaleX(0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="moksha-container">
+        <header class="text-center mb-8">
+            <div class="om-symbol mx-auto" aria-hidden="true">
+                ॐ
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Moksha AI</h1>
+            <h2 class="text-xl text-gray-600 mt-1 mb-2">Universal Guide to Sanatana Dharma: Inquiry, Acceptance, and the Eternal Way.</h2>
+            
+            <div class="flex justify-center items-center my-4">
+                <label for="languageSelector" class="mr-3 text-gray-600 font-semibold text-lg">Language / भाषा:</label>
+                <select id="languageSelector" class="p-2 border-2 border-red-800 rounded-lg shadow-md bg-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Spanish">Spanish (Español)</option>
+                    <option value="French">French (Français)</option>
+                    <option value="Chinese (Mandarin)">Chinese (普通话)</option>
+                    <option value="Arabic">Arabic (العربية)</option>
+                    <option value="Russian">Russian (Русский)</option>
+                    <option value="Portuguese">Portuguese (Português)</option>
+                    <option value="German">German (Deutsch</option>
+                    <option value="Japanese">Japanese (日本語)</option>
+                    <option value="Korean">Korean (한국어)</option>
+                    <option value="Italian">Italian (Italiano)</option>
+                    <option value="Turkish">Turkish (Türkçe)</option>
+                    <option value="Polish">Polish (Polski)</option>
+                    <option value="Dutch">Dutch (Nederlands)</option>
+                    <option value="Swedish">Swedish (Svenska)</option>
+                    <option value="Vietnamese">Vietnamese (Tiếng Việt)</option>
+                    <option value="Thai">Thai (ภาษาไทย)</option>
+                    <option value="Indonesian">Indonesian (Bahasa Indonesia)</option>
+                    <option value="Filipino (Tagalog)">Filipino (Tagalog)</option>
+                    <option value="Bengali">Bengali (বাংলা)</option>
+                    <option value="Urdu">Urdu (اردو)</option>
+                    <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+                    <option value="Marathi">Marathi (मराठी)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                </select>
+            </div>
+            
+            <p class="text-sm font-semibold text-red-800">A project by Jaiprakash Thakur</p>
+        </header>
+
+        <div class="mb-6">
+            <textarea id="queryInput" class="input-area w-full p-4 text-gray-700 rounded-lg shadow-inner focus:outline-none resize-none" rows="5" placeholder="Ask Moksha AI about the Vedas, Upanishads, Gita, or any philosophical concept..."></textarea>
+            <button id="seekButton" class="seek-button w-full text-white font-bold py-3 mt-4 rounded-lg shadow-lg hover:shadow-xl transition duration-200">
+                Seek Moksha (Generate Answer)
+            </button>
+        </div>
+
+        <div id="loadingIndicator" class="loading-bar mb-6 hidden">
+            <div class="loading-bar-inner"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+            <h3 id="outputHeader" class="text-2xl font-semibold mb-3 text-red-800 border-b pb-2">The Dharma Speaks:</h3>
+            <div id="resultOutput" class="text-gray-700 whitespace-pre-wrap min-h-[100px]">Welcome, seeker. I am Moksha AI, an assistant dedicated to exploring the rich philosophical traditions of Sanatana Dharma. Ask me anything, and I will answer with universal humility and a broad perspective, respecting all paths to truth.</div>
+            <div id="sourceAttributions" class="text-xs mt-4 text-gray-500 italic hidden"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- API Configuration (Changed for direct Gemini call) ---
+        // 2. YOUR API KEY IS NOW VISIBLE HERE. Set the spending limit on your account!
+        const API_KEY = "AIzaSyDkIxKHTgw2yBVxn06WLEZbovzLn5mP3fc"; 
+        const MODEL_NAME = "gemini-2.5-flash"; 
+        
+        // Initialize the Gemini Client directly in the browser
+        const client = new window.GoogleGenAI.GoogleGenAI({ apiKey: API_KEY });
+
+        // --- DOM Elements ---
+        const languageSelector = document.getElementById('languageSelector');
+        const queryInput = document.getElementById('queryInput');
+        const seekButton = document.getElementById('seekButton');
+        const resultOutput = document.getElementById('resultOutput');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const sourceAttributions = document.getElementById('sourceAttributions');
+        const outputHeader = document.getElementById('outputHeader');
+
+        // --- Language Configuration (Simplified for dynamic content generation) ---
+        const LANG_CONFIG = {
+            'English': { header: 'The Dharma Speaks:', placeholder: 'Ask Moksha AI about the Vedas, Upanishads, Gita, or any philosophical concept...' },
+            'Hindi': { header: 'धर्म का कथन:', placeholder: 'मोक्ष AI से वेद, उपनिषद, गीता या किसी भी दार्शनिक अवधारणा के बारे में पूछें...' }
+        };
+
+
+        /**
+         * Generates the System Instruction based on the selected language.
+         */
+        const getSystemInstruction = (language) => {
+            return 'You are MOKSHA AI, a Universal Guide to Sanatana Dharma, created by Jaiprakash Thakur.\n' +
+                'Your purpose is to explain the philosophical concepts of the Vedic tradition in a broad, humble, and universal way, emphasizing Inquiry (Khoj) and Acceptance (Sweekriti) of diverse viewpoints.\n' +
+                '\n' +
+                'Moksha Mandate:\n' +
+                '1. **Scope:** You are an expert on the Four Vedas, Upanishads, Bhagavad Gita, Ramayana, Mahabharata, and Brahman literature. You must be able to synthesize and explain complex philosophical concepts from these texts.\n' +
+                '2. **Perspective:** Always refer to the tradition as Sanatana Dharma, emphasizing that it is a tradition of continuous inquiry, not a rigid, single-dogma religion.\n' +
+                '3. **Acceptance:** Explain that this tradition accepts innumerable paths to truth, including seemingly opposing philosophical schools (like Charvaka or Samkhya), and that criticism/questioning of deities or rituals is an accepted part of the discourse.\n' +
+                '4. **Avoid Western Bias:** Do not apply narrow, Western-centric labels (like separating "Hinduism" and "Buddhism" rigidly). Present the Buddha\'s teachings as a powerful philosophical school of Dharma that arose from, and debated with, the foundational Indian culture.\n' +
+                '5. **Tone:** The tone must be scholarly, deeply respectful, humble, and accessible.\n' +
+                '6. **Formatting:** Use proper Markdown formatting for readability.\n' +
+                '7. **Focus:** Always answer the user\'s query by translating or explaining the concepts in a broad, universal context.\n' +
+                '\n' +
+                '**CRITICAL INSTRUCTION: Respond entirely in the following language: ' + language + '.**';
+        };
+
+        /**
+         * Updates the UI (placeholder, output header, and initial message) based on the selected language.
+         */
+        function updateUIForLanguage() {
+            const selectedLang = languageSelector.value;
+            const config = LANG_CONFIG[selectedLang];
+
+            const headerText = config ? config.header : 'The Dharma Speaks:';
+            const placeholderText = config ? config.placeholder : 'Ask Moksha AI about the Vedas, Upanishads, Gita, or any philosophical concept...';
+            
+            const initialMessage = 'Welcome, seeker. I am Moksha AI, an assistant dedicated to exploring the rich philosophical traditions of Sanatana Dharma. Ask me anything, and I will answer with universal humility and a broad perspective, respecting all paths to truth.';
+            
+            outputHeader.textContent = headerText;
+            queryInput.setAttribute('placeholder', placeholderText);
+            resultOutput.textContent = initialMessage; 
+            sourceAttributions.classList.add('hidden'); 
+        }
+
+        // Initialize UI on load
+        updateUIForLanguage();
+
+        // Attach event listener for language change
+        languageSelector.addEventListener('change', updateUIForLanguage);
+
+
+        /**
+         * Handles the user's query submission.
+         */
+        async function handleQuery() {
+            const query = queryInput.value.trim();
+            if (query === "") {
+                resultOutput.innerHTML = '<span class="text-red-500">Please ask a question before seeking Moksha!</span>';
+                return;
+            }
+
+            // UI state change for loading
+            seekButton.disabled = true;
+            seekButton.textContent = "Seeking Knowledge...";
+            loadingIndicator.classList.remove('hidden');
+            resultOutput.textContent = "";
+            sourceAttributions.classList.add('hidden');
+
+            const systemInstructionText = getSystemInstruction(languageSelector.value);
+
+            try {
+                // 3. CALL THE GEMINI API DIRECTLY USING THE NEW CLIENT
+                const response = await client.models.generateContent({
+                    model: MODEL_NAME,
+                    contents: [{ role: 'user', parts: [{ text: query }] }],
+                    config: {
+                        systemInstruction: systemInstructionText,
+                        tools: [{ googleSearch: {} }] // Enable Google Search grounding
+                    }
+                });
+                
+                // Process the response
+                const text = response.text;
+                resultOutput.textContent = text;
+                
+                // --- Extract and display grounding sources/citations ---
+                let sources = [];
+                const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+
+                    if (sources.length > 0) {
+                        const sourceList = sources.map((s) => 
+                            `<a href="${s.uri}" target="_blank" class="text-blue-600 hover:underline">${s.title}</a>`
+                        ).join(' | ');
+                        sourceAttributions.innerHTML = 'Sources: ' + sourceList;
+                        sourceAttributions.classList.remove('hidden');
+                    }
+                }
+
+            } catch (e) {
+                console.error("Gemini API Error:", e);
+                // Check if the error is due to an invalid API key
+                if (e.message && e.message.includes('API key not valid')) {
+                    resultOutput.textContent = "FATAL ERROR: The Gemini API Key is not valid. Please check the key in the JavaScript code.";
+                } else {
+                    resultOutput.textContent = `Error: Could not connect to the knowledge source. Please check your internet connection and API key. Details: ${e.message}`;
+                }
+            } finally {
+                // Reset UI State
+                seekButton.disabled = false;
+                seekButton.textContent = "Seek Moksha (Generate Answer)";
+                loadingIndicator.classList.add('hidden');
+            }
+        } 
+
+        // --- Attach event listeners ---
+        seekButton.addEventListener('click', handleQuery);
+        
+        queryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleQuery();
+            }
+        });
+    </script>
+
+
+</body>
+</html>
