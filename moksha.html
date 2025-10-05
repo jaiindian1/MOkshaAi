@@ -74,18 +74,31 @@
 <body class="p-4 md:p-8">
 
     <div class="moksha-container">
+        
         <header class="text-center mb-8">
             <div class="om-symbol mx-auto" aria-hidden="true">ॐ</div>
             <h1 class="text-4xl font-bold text-gray-800 mb-2">Moksha AI</h1>
             <p class="text-lg text-gray-600">A Universal Dharma Guide</p>
+            <p class="text-sm text-gray-500 mt-1">Built by **Jaiprakash Thakur**</p> 
         </header>
 
         <main>
             <div id="chat-output" class="mb-6 p-4 bg-gray-50 rounded-lg h-96 overflow-y-auto border border-gray-200">
-                <p class="text-gray-500">How may I assist you on your path of inquiry? I specialize in Sanatana, Buddhist, Jain, and Sikh philosophies.</p>
+                <p class="text-gray-500">Welcome to Moksha AI. I specialize in Sanatana, Buddhist, Jain, and Sikh philosophies. How may I assist your path of inquiry?</p>
             </div>
 
             <div class="flex flex-col space-y-4">
+                
+                <div class="flex justify-end items-center space-x-2">
+                    <label for="language-selector" class="text-sm font-medium text-gray-700">Choose Reply Language:</label>
+                    <select id="language-selector" class="p-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-maroon-600 focus:border-maroon-600">
+                        <option value="English">English (Default)</option>
+                        <option value="Hindi">हिन्दी (Hindi)</option>
+                        <option value="Sanskrit">संस्कृतम् (Sanskrit)</option>
+                        <option value="Tamil">தமிழ் (Tamil)</option>
+                        <option value="Bengali">বাংলা (Bengali)</option>
+                    </select>
+                </div>
                 <textarea id="user-input" class="input-area p-4 rounded-lg focus:outline-none resize-none text-gray-700" placeholder="Ask a question about Sanatana Dharma, the Buddha, Jainism, or Sikhism..."></textarea>
                 
                 <div id="loading-indicator" class="loading-bar hidden">
@@ -100,16 +113,12 @@
     </div>
 
     <script>
-        // 1. **CRITICAL SECURITY NOTE:** For a real, deployed app, the API Key
-        // should NEVER be exposed directly in an HTML file like this. 
-        // It must be used on a secure backend server. 
-        // This is for demonstration purposes only!
-        const API_KEY = "AIzaSyBE-zOAEIB8Ww9vrFpJlCUxPJxibuedoho"; // 🛑 Replace this with your actual key
-        const MODEL_NAME = "gemini-2.5-flash"; // Or your preferred model
+        // 1. **CRITICAL SECURITY NOTE:** Replace this with your actual key
+        const API_KEY = "AIzaSyC4UTFOHmR6kLQN-iks4USfOu41GFWOwJY"; // 🛑 PASTE YOUR CORRECT, ACTIVE KEY HERE!
+        const MODEL_NAME = "gemini-2.5-flash"; 
 
-        // 2. **THE DHARMA GUARDRAIL (System Prompt)**
-        // This is the core change for your "Project Prompt" goal.
-        const DHARMA_GUARDRAIL_SYSTEM_INSTRUCTION = `
+        // 2. **THE DHARMA GUARDRAIL (System Prompt) - Now includes a placeholder for the language rule**
+        const BASE_SYSTEM_INSTRUCTION = `
             You are a specialized AI named Moksha AI, a Universal Dharma Guide.
             Your sole function is to provide information and philosophical insights
             related to the Sanatana, Buddhist, Jain, and Sikh traditions.
@@ -125,23 +134,30 @@
 
         // 3. **API and DOM Setup**
         let chat = null;
-        const genai = new GoogleGenAI(API_KEY);
+        const genai = new GoogleGenAI(API_KEY); 
 
         const chatOutput = document.getElementById('chat-output');
         const userInput = document.getElementById('user-input');
         const seekButton = document.getElementById('seek-button');
         const loadingIndicator = document.getElementById('loading-indicator');
+        // 🌟 NEW DOM ELEMENT
+        const languageSelector = document.getElementById('language-selector');
 
-        // Function to start a new chat session with the *strict* System Prompt
+        // Function to start a new chat session with the *strict* System Prompt AND language rule
         function startNewChat() {
+            const selectedLanguage = languageSelector.value;
+            // Append the language instruction to the base guardrail
+            const DHARMA_GUARDRAIL_WITH_LANGUAGE = BASE_SYSTEM_INSTRUCTION + `\n\n**LANGUAGE RULE:** You MUST respond entirely in the ${selectedLanguage} language.`;
+
             chat = genai.chats.create({
                 model: MODEL_NAME,
-                systemInstruction: DHARMA_GUARDRAIL_SYSTEM_INSTRUCTION // 🌟 THIS IS THE KEY CHANGE!
+                // The system instruction now includes the user's selected language constraint
+                systemInstruction: DHARMA_GUARDRAIL_WITH_LANGUAGE 
             });
         }
 
-        // Add a message to the chat display
         function addMessage(role, text) {
+            // ... (Message display logic remains the same) ...
             const messageDiv = document.createElement('div');
             messageDiv.className = role === 'user' 
                 ? 'text-right mb-2' 
@@ -152,7 +168,6 @@
                 ? 'inline-block bg-maroon-600 text-white p-3 rounded-lg max-w-lg shadow-md seek-button'
                 : 'inline-block bg-gray-200 text-gray-800 p-3 rounded-lg max-w-lg shadow-md';
             
-            // Simple markdown/line break handling
             contentSpan.innerHTML = text.replace(/\n/g, '<br>');
 
             messageDiv.appendChild(contentSpan);
@@ -160,12 +175,14 @@
             chatOutput.scrollTop = chatOutput.scrollHeight;
         }
 
-        // Main function to handle the button click
         async function sendMessage() {
+            // The chat session is restarted to include the latest language choice
+            startNewChat(); 
+
             const message = userInput.value.trim();
             if (!message) return;
 
-            // Clear input and show loading
+            // ... (Message sending logic remains the same) ...
             userInput.value = '';
             addMessage('user', message);
             seekButton.disabled = true;
@@ -173,22 +190,27 @@
             loadingIndicator.classList.remove('hidden');
 
             try {
-                // Send the message using the chat instance that has the system instruction
                 const response = await chat.sendMessage({ message: message });
                 const responseText = response.text;
 
                 addMessage('model', responseText);
             } catch (error) {
                 console.error("AI Error:", error);
-                addMessage('model', "A deeper insight is required. There was an error reaching the source of knowledge.");
+                addMessage('model', "I cannot reach the source of knowledge right now. Please check the API key or try again later.");
             } finally {
-                // Reset button and hide loading
                 seekButton.disabled = false;
                 seekButton.textContent = "Seek Truth (Dharma Inquiry)";
                 loadingIndicator.classList.add('hidden');
                 userInput.focus();
             }
         }
+
+        // 🌟 NEW: Restart the chat session whenever the user changes the language selector
+        languageSelector.addEventListener('change', () => {
+             // Display a message that the language has been updated
+             addMessage('model', `Reply language has been set to **${languageSelector.value}**.`);
+        });
+
 
         // Event Listeners
         seekButton.addEventListener('click', sendMessage);
@@ -199,18 +221,21 @@
             }
         });
         
-        // Start the chat when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-             // Initialize the chat on load
+            // Initialize the chat on load
             startNewChat();
-            
-            // Set initial message
-            const welcomeMessage = document.querySelector('#chat-output p');
-            if (welcomeMessage) {
-                welcomeMessage.textContent = "Welcome to Moksha AI. I specialize in Sanatana, Buddhist, Jain, and Sikh philosophies. How may I assist your path of inquiry?";
-            }
         });
 
     </script>
 </body>
 </html>
+Key Changes Explained
+HTML Element Added: We added a new <select> drop-down menu with the ID language-selector to the main section:
+
+HTML
+
+<select id="language-selector" ...>
+    <option value="English">English (Default)</option>
+    <option value="Hindi">हिन्दी (Hindi)</option>
+    ...
+</select>
