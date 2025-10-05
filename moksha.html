@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moksha AI: Universal Dharma Guide</title>
-    <script src="https://cdn.jsdelivr.net/npm/@google/genai@0.2.1/dist/index.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -134,14 +133,13 @@
     </div>
 
     <script type="module">
-        // --- API Configuration (Changed for direct Gemini call) ---
-        // 2. YOUR API KEY IS NOW VISIBLE HERE. Set the spending limit on your account!
-        const API_KEY = "AIzaSyDkIxKHTgw2yBVxn06WLEZbovzLn5mP3fc"; 
+        // --- API Configuration ---
+        // 🚨 CRITICAL FIX FOR GITHUB PAGES: Key is now in the client-side code!
+        // The spending limit on your account acts as an insurance policy.
+        const API_KEY = "AIzaSyBE-zOAEIB8Ww9vrFpJlCUxPJxibuedoho"; // <--- 🔑 PASTE YOUR KEY HERE 🔑
         const MODEL_NAME = "gemini-2.5-flash"; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
         
-        // Initialize the Gemini Client directly in the browser
-        const client = new window.GoogleGenAI.GoogleGenAI({ apiKey: API_KEY });
-
         // --- DOM Elements ---
         const languageSelector = document.getElementById('languageSelector');
         const queryInput = document.getElementById('queryInput');
@@ -184,11 +182,15 @@
             const selectedLang = languageSelector.value;
             const config = LANG_CONFIG[selectedLang];
 
+            // Use generic English text if config for the selected language is not explicitly defined, 
+            // and rely on the model to translate the response.
             const headerText = config ? config.header : 'The Dharma Speaks:';
             const placeholderText = config ? config.placeholder : 'Ask Moksha AI about the Vedas, Upanishads, Gita, or any philosophical concept...';
             
+            // Initial message: use a generic prompt that the model can translate instantly
             const initialMessage = 'Welcome, seeker. I am Moksha AI, an assistant dedicated to exploring the rich philosophical traditions of Sanatana Dharma. Ask me anything, and I will answer with universal humility and a broad perspective, respecting all paths to truth.';
             
+            // Dynamically set content for the current language
             outputHeader.textContent = headerText;
             queryInput.setAttribute('placeholder', placeholderText);
             resultOutput.textContent = initialMessage; 
@@ -203,13 +205,38 @@
 
 
         /**
+         * Converts the query and system instruction into the API payload.
+         */
+        const createPayload = (userQuery) => {
+            const selectedLang = languageSelector.value;
+            const systemInstruction = getSystemInstruction(selectedLang);
+
+            // The payload is now sent directly to the Gemini API endpoint
+            return {
+                contents: [{ parts: [{ text: userQuery }] }],
+                // Enable Google Search grounding for up-to-date and factual responses
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+            };
+        };
+
+        /**
          * Handles the user's query submission.
          */
         async function handleQuery() {
             const query = queryInput.value.trim();
             if (query === "") {
+                // Using standard string
                 resultOutput.innerHTML = '<span class="text-red-500">Please ask a question before seeking Moksha!</span>';
                 return;
+            }
+
+            // --- CRITICAL CHECK: The API key must be correct now! ---
+            if (API_KEY === "YOUR_NEW_API_KEY_HERE") {
+                 resultOutput.textContent = "FATAL ERROR: The Gemini API Key must be replaced in the code before the app can function.";
+                 return;
             }
 
             // UI state change for loading
@@ -219,62 +246,103 @@
             resultOutput.textContent = "";
             sourceAttributions.classList.add('hidden');
 
-            const systemInstructionText = getSystemInstruction(languageSelector.value);
+            const payload = createPayload(query);
+            let attempts = 0;
+            const maxAttempts = 3;
+            let response;
+            let success = false;
 
-            try {
-                // 3. CALL THE GEMINI API DIRECTLY USING THE NEW CLIENT
-                const response = await client.models.generateContent({
-                    model: MODEL_NAME,
-                    contents: [{ role: 'user', parts: [{ text: query }] }],
-                    config: {
-                        systemInstruction: systemInstructionText,
-                        tools: [{ googleSearch: {} }] // Enable Google Search grounding
+            // Exponential backoff for retries
+            while (attempts < maxAttempts && !success) {
+                attempts++;
+                try {
+                    // *** API_URL now includes the key; this is a direct call for GitHub Pages ***
+                    response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        success = true;
+                        break;
+                    } else if (response.status === 429 && attempts < maxAttempts) {
+                        // Too Many Requests (Rate limit) - wait and retry
+                        const delay = Math.pow(2, attempts) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        // Get error message from response body
+                        const errorData = await response.json();
+                        const errorMessage = errorData.error?.message || response.statusText;
+                        throw new Error('API Error: ' + response.status + ' - ' + errorMessage);
                     }
-                });
-                
-                // Process the response
-                const text = response.text;
-                resultOutput.textContent = text;
-                
-                // --- Extract and display grounding sources/citations ---
-                let sources = [];
-                const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-                if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                    sources = groundingMetadata.groundingAttributions
-                        .map(attribution => ({
-                            uri: attribution.web?.uri,
-                            title: attribution.web?.title,
-                        }))
-                        .filter(source => source.uri && source.title);
-
-                    if (sources.length > 0) {
-                        const sourceList = sources.map((s) => 
-                            `<a href="${s.uri}" target="_blank" class="text-blue-600 hover:underline">${s.title}</a>`
-                        ).join(' | ');
-                        sourceAttributions.innerHTML = 'Sources: ' + sourceList;
-                        sourceAttributions.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Fetch attempt failed:", error);
+                    if (attempts === maxAttempts) {
+                        resultOutput.textContent = 'Error: Could not connect to the knowledge source after ' + maxAttempts + ' attempts. The likely cause is an invalid API key or a network block.';
+                        success = false;
+                        break;
                     }
                 }
-
-            } catch (e) {
-                console.error("Gemini API Error:", e);
-                // Check if the error is due to an invalid API key
-                if (e.message && e.message.includes('API key not valid')) {
-                    resultOutput.textContent = "FATAL ERROR: The Gemini API Key is not valid. Please check the key in the JavaScript code.";
-                } else {
-                    resultOutput.textContent = `Error: Could not connect to the knowledge source. Please check your internet connection and API key. Details: ${e.message}`;
-                }
-            } finally {
-                // Reset UI State
-                seekButton.disabled = false;
-                seekButton.textContent = "Seek Moksha (Generate Answer)";
-                loadingIndicator.classList.add('hidden');
             }
+
+            // Process the successful response or finalize error state
+            if (success && response) {
+                try {
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text;
+                        // --- IMPORTANT: Display the Answer ---
+                        resultOutput.textContent = text;
+                        
+                        // Extract and display grounding sources/citations
+                        let sources = [];
+                        const groundingMetadata = candidate.groundingMetadata;
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title); // Ensure sources are valid
+
+                            if (sources.length > 0) {
+                                // Using standard string concatenation
+                                const sourceList = sources.map((s) => 
+                                    '<a href="' + s.uri + '" target="_blank" class="text-blue-600 hover:underline">' + s.title + '</a>'
+                                ).join(' | ');
+                                // Using standard string concatenation
+                                sourceAttributions.innerHTML = 'Sources: ' + sourceList;
+                                sourceAttributions.classList.remove('hidden');
+                            }
+                        }
+
+                    } else {
+                        // Check for API errors returned in the response body (like blocked prompt)
+                         const errorMessage = result.error?.message || "Received an invalid or empty response from the AI. The structure might be incorrect.";
+                         resultOutput.textContent = "Error: " + errorMessage;
+                    }
+                } catch (e) {
+                    console.error("JSON parsing error:", e);
+                    resultOutput.textContent = "Error: Failed to process the AI response (JSON error).";
+                }
+            } else if (!success) {
+                 // Final error state message (set in the loop) will remain.
+            }
+
+            // --- IMPORTANT: Reset UI State ---
+            seekButton.disabled = false;
+            seekButton.textContent = "Seek Moksha (Generate Answer)";
+            loadingIndicator.classList.add('hidden');
         } 
 
-        // --- Attach event listeners ---
+        // --- Attach event listeners directly within the module scope ---
+        // 1. Attach the click listener to the Seek Moksha button.
         seekButton.addEventListener('click', handleQuery);
         
+        // 2. Allow pressing Enter to submit
         queryInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
