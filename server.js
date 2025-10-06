@@ -1,57 +1,63 @@
-// server.js (The Secure Proxy Server)
+// server.js (Node.js/Express) - Moksha AI Secure Proxy
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import cors from 'cors';
 
-// 1. Read API Key securely from the Render Environment Variable
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-    console.error('FATAL: GEMINI_API_KEY environment variable is not set.');
-    process.exit(1);
+// Initialize Express App
+const app = express();
+// Render tells us which port to use via the environment variable
+const port = process.env.PORT || 3000; 
+
+// --- Middleware (The necessary tools for the kitchen) ---
+app.use(cors()); // Allows the website to talk to the server
+app.use(express.json()); // CRITICAL: This allows the server to correctly read the JSON body (the 'prompt' and 'systemInstruction')
+
+// --- Google AI Client Initialization ---
+// The key is securely loaded from Render's environment variable (the one you set: GEMINI_API_KEY)
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+    console.error("FATAL ERROR: GEMINI_API_KEY is not set.");
+    // The server cannot run without the secret key.
 }
 
-const app = express();
-const port = process.env.PORT || 3000;
+const ai = new GoogleGenAI({ apiKey });
 
-// Middleware to allow your GitHub Page to talk to this server
-app.use(cors({
-    origin: 'https://jaiindian1.github.io', // ONLY allow your specific GitHub Page URL
-    methods: ['POST'],
-}));
-app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
-
-// Initialize AI client
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-// POST endpoint for the chat
+// --- Core Proxy Route: The new, correct recipe ---
 app.post('/chat', async (req, res) => {
     try {
-        // We receive the user's question and the system rules from the front-end
-        const { contents, systemInstruction } = req.body;
-
-        if (!contents || contents.length === 0) {
-            return res.status(400).send({ error: "Missing 'contents' in request body." });
+        // 1. Get the correct ingredients (prompt and systemInstruction) from the website's delivery
+        const { prompt, systemInstruction } = req.body;
+        
+        if (!prompt) {
+            // If the key ingredient is missing, send the 400 error back (this prevents the old error message)
+            return res.status(400).json({ error: "Missing 'prompt' in request body." });
         }
 
-        // Use the AI with the secret key (ONLY on the server)
-        const response = await ai.models.generateContent({
+        // 2. Create the chat session with the AI's core instructions
+        const chat = ai.chats.create({
             model: "gemini-2.5-flash",
-            contents: contents,
             config: {
-                systemInstruction: systemInstruction,
+                systemInstruction: systemInstruction, 
             },
         });
 
-        // Send ONLY the AI's response text back to the GitHub Page
-        res.json({ text: response.text });
+        // 3. Send the message to the real Gemini API
+        const result = await chat.sendMessage({
+            contents: [prompt] // Sending the 'prompt' we received
+        });
+
+        // 4. Send the final text response back to the website
+        res.json({ text: result.text });
 
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        res.status(500).send({ error: "Failed to generate content from Gemini API." });
+        console.error("Gemini API or Server Error:", error);
+        // If anything else breaks, send a general error message
+        res.status(500).json({ error: "Internal Server Error. Please check Render Logs for details." });
     }
 });
 
-// Start server
+// --- Server Start ---
 app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+    console.log(`Moksha AI Proxy Server listening on port ${port}`);
 });
