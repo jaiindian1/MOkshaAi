@@ -1,16 +1,17 @@
 {
-  "name": "moksha-ai",
+  "name": "moksha-ai-proxy",
   "version": "1.0.0",
-  "description": "Secure Proxy Server for Moksha AI",
+  "description": "Secure proxy server for the Moksha AI Gemini implementation.",
   "main": "server.js",
-  "type": "module",
+  "type": "module", 
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@google/genai": "latest",
-    "cors": "^2.8.5",
-    "express": "^4.18.3"
+    "@google/genai": "^latest",
+    "cors": "^latest",
+    "dotenv": "^latest",
+    "express": "^latest"
   }
 }
-
