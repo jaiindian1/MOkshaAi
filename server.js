@@ -2,12 +2,11 @@
 
 // 1. IMPORTS & SETUP
 
-// CRITICAL: Load environment variables first! 
-// This is the standard, error-free way to load the .env file 
-// before any other part of the code tries to access process.env.
-require('dotenv').config(); 
+// CRITICAL FIX: This is the correct ES Module way to load the .env file.
+// This single line replaces the old 'require' method and prevents the ReferenceError.
+import 'dotenv/config'; 
 
-// Import all other packages using ES Module syntax (requires "type": "module" in package.json)
+// Import all other packages using ES Module syntax
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import cors from 'cors'; 
