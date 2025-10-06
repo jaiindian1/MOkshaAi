@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Secure Proxy Server for Moksha AI",
   "main": "server.js",
-  "type": "module",  <-- **ADD THIS LINE** (with a comma at the end)
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
@@ -13,3 +13,4 @@
     "express": "^4.18.3"
   }
 }
+
