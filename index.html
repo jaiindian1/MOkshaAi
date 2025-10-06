@@ -139,12 +139,48 @@
     </div>
 
     <script>
+        // *** CRITICAL: SECURE PROXY SETUP (New, Correct Code) ***
+        // The key is now hidden on the Render server.
+        // The frontend must talk to the server (your Render URL) to get a secure response.
+        const PROXY_SERVER_URL = "https://mokshaai.onrender.com/chat";
         
-        // 🛑 IMPORTANT: API KEY IS GONE! It's on the Render server now.
-        // *******************************************************************
-        // YOU MUST CHANGE THIS URL AFTER RENDER GIVES YOU YOUR LIVE SERVER LINK
-        // *******************************************************************
-        const PROXY_SERVER_URL = "YOUR_RENDER_URL_HERE/chat"; 
+        // The 'ai' client is now a simple placeholder that handles the fetch request to your proxy.
+        // We don't need the official SDK anymore, as the server does the heavy lifting.
+        const ai = {
+            chats: {
+                create: (config) => ({
+                    sendMessage: async (contents) => {
+                        const userMessage = contents.contents.find(p => typeof p === 'string');
+                        if (!userMessage) throw new Error("No user message found.");
+
+                        // Extract the system instruction for the server
+                        const systemInstruction = config.config.systemInstruction;
+                        
+                        // The actual network call to your secure Render server
+                        const response = await fetch(PROXY_SERVER_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                prompt: userMessage,
+                                systemInstruction: systemInstruction,
+                                // NOTE: Multi-modal content (files) is not yet supported in this secure proxy design
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({error: "Unknown server error during secure communication."}));
+                            throw new Error(`Proxy Server Error (${response.status}): ${errorData.error}`);
+                        }
+
+                        const data = await response.json();
+                        return { text: data.text }; // Return the final text from the server
+                    }
+                })
+            }
+        };
+        let chat; // The chat object is now just a container for the new sendMessage function
 
         // DOM Elements
         const userInput = document.getElementById('user-input');
@@ -172,8 +208,16 @@
             `;
         };
         
-        // Function to start a new chat session (no longer needs to create a chat object)
+        // Function to start a new chat session
         function startNewChat() {
+            // This function uses 'ai' to create the chat object, which now uses the secure proxy method
+            chat = ai.chats.create({
+                model: "gemini-2.5-flash", 
+                config: {
+                    systemInstruction: getSystemPrompt(),
+                },
+            });
+
             // Clear previous messages and display a welcome message
             chatOutput.innerHTML = '';
             fileUploadInput.value = null; // Clear any selected files
@@ -188,7 +232,8 @@
             
             let content = `<div class="font-bold mb-1">${sender === 'user' ? 'You' : 'Moksha AI'}</div>`;
             
-            // Add images/file names if they exist
+            // NOTE: File display is kept but the actual file upload logic in sendMessage 
+            // has been commented out because the simple proxy doesn't handle files yet.
             if (files.length > 0) {
                 const fileNames = Array.from(files).map(f => f.name).join(', ');
                 content += `<p class="text-xs text-gray-500 italic mb-2">Attached Files: ${fileNames}</p>`;
@@ -202,23 +247,8 @@
             chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll to bottom
         }
 
-        // Function to read a file and convert it to a format the Gemini API understands
-        function fileToGenerativePart(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const base64Data = event.target.result.split(',')[1];
-                    resolve({
-                        inlineData: {
-                            data: base64Data,
-                            mimeType: file.type
-                        }
-                    });
-                };
-                reader.onerror = (error) => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
+        // NOTE: The fileToGenerativePart function is no longer needed since the proxy doesn't handle files yet.
+        // I have removed it to keep the code clean.
 
         // Event listener to display the file names when selected
         fileUploadInput.addEventListener('change', () => {
@@ -234,58 +264,42 @@
             }
         });
 
-        // Function to send the message and get the AI response using the SECURE PROXY SERVER
+        // Function to send the message and get the AI response (using the SECURE PROXY method)
         async function sendMessage() {
             const userText = userInput.value.trim();
-            const files = fileUploadInput.files;
+            // const files = fileUploadInput.files; // File logic is disabled for now for proxy security
 
-            if (!userText && files.length === 0) return; // Do nothing if input is empty
+            if (!userText) return; // Do nothing if input is empty
 
             seekButton.disabled = true;
             buttonText.textContent = "Processing...";
             loadingIndicator.classList.remove('hidden');
             
-            addMessage('user', userText, files);
+            // Only send the user text, not files (files are a next-level feature)
+            addMessage('user', userText); 
             userInput.value = ''; // Clear input field
 
             try {
-                // 1. Prepare Content for Server
-                const imageParts = await Promise.all(Array.from(files).map(fileToGenerativePart));
-                
-                // Combine the image parts with the user's text
-                const contents = [...imageParts, userText];
-                const systemInstruction = getSystemPrompt(); // Get the current system prompt
+                // 1. Prepare Content for AI
+                const contents = [userText];
 
-                // 2. Call the new SECURE PROXY SERVER
-                const response = await fetch(PROXY_SERVER_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ contents, systemInstruction }),
-                });
+                // 2. Call the AI securely through the 'chat' object, which now calls the Render server
+                const response = await chat.sendMessage({ contents: contents });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    // 3. Display the response from the secure server
-                    addMessage('model', data.text);
-                } else {
-                    // Handle server errors (e.g., if the key is invalid on the server)
-                    console.error("Server Error:", data.error || "Unknown server error");
-                    addMessage('model', "Apologies, the Moksha AI secure server failed to get a response. Please check the server logs.");
-                }
+                // 3. Display the response
+                addMessage('model', response.text);
 
             } catch (error) {
-                console.error("Network or Fetch Error:", error);
-                addMessage('model', "Apologies, the Moksha AI cannot reach the secure knowledge server.");
+                console.error("AI Error:", error);
+                // Note: The error now comes from the Render server if the key is wrong.
+                addMessage('model', "Apologies, the Moksha AI cannot reach the source of knowledge right now. (Error: " + error.message + "). This usually means the server is spinning up or the secure API key has expired.");
             } finally {
                 // Reset state
                 seekButton.disabled = false;
                 buttonText.textContent = "Seek Truth";
                 loadingIndicator.classList.add('hidden');
                 
-                // Clear files after sending
+                // Clear files display after sending (even though they weren't sent)
                 fileUploadInput.value = null; 
                 fileDisplay.innerHTML = '';
                 userInput.focus();
@@ -294,7 +308,7 @@
 
         // Restart the chat session whenever the user changes the language selector
         languageSelector.addEventListener('change', () => {
-             startNewChat(); // Restart the chat to load the new system prompt
+             startNewChat(); 
              addMessage('model', `Reply language has been reset and set to **${languageSelector.value}**.`);
         });
 
@@ -309,18 +323,13 @@
         });
         
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize the chat on load
             startNewChat();
+            
+            // Attach the restart function to the button
             restartButton.addEventListener('click', startNewChat);
         });
 
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
