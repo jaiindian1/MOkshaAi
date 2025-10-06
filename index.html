@@ -78,7 +78,7 @@
         </header>
 
         <div class="flex justify-between items-center pt-4 pb-4">
-            <button id="restart-button" onclick="startNewChat()" class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150">
+            <button id="restart-button" class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150">
                 Restart Chat
             </button>
             <div class="flex items-center space-x-3">
@@ -140,9 +140,11 @@
 
     <script>
         // *** WARNING: API KEY IS EXPOSED FOR PRACTICE ONLY ***
-        const GEMINI_API_KEY = "AIzaSyD660EaYuAGFz_nt1lwcLf4O4m-n1AidNw"; // YOUR API KEY IS HERE
+        // NOTE: Please replace this with your current, working API key.
+        const GEMINI_API_KEY = "AIzaSyD660EaYuAGFz_nt1lwcLf4O4m-n1AidNw"; 
 
         // Initialize the Gemini AI client with the exposed key
+        // 🌟 CRITICAL: 'ai' and 'chat' are initialized here first
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         let chat; // The chat object will store the conversation history
 
@@ -153,8 +155,9 @@
         const languageSelector = document.getElementById('language-selector');
         const fileUploadInput = document.getElementById('file-upload');
         const fileDisplay = document.getElementById('file-display');
-        const loadingIndicator = document.getElementById('loading-indicator'); // Added reference
-        const buttonText = document.getElementById('button-text'); // Added reference
+        const loadingIndicator = document.getElementById('loading-indicator'); 
+        const buttonText = document.getElementById('button-text');
+        const restartButton = document.getElementById('restart-button'); // NEW: Reference to the restart button
 
         // The AI's Core Identity and Rules (System Prompt)
         const getSystemPrompt = () => {
@@ -173,6 +176,7 @@
         
         // Function to start a new chat session
         function startNewChat() {
+            // This function uses 'ai', which is defined above, fixing the ReferenceError
             chat = ai.chats.create({
                 model: "gemini-2.5-flash", // Good for multi-turn chat and multimodal input
                 config: {
@@ -301,8 +305,11 @@
         });
         
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize the chat on load
+            // Initialize the chat on load (This runs AFTER 'ai' is fully defined)
             startNewChat();
+            
+            // 🌟 FIX: Attach the restart function to the button ONLY after startNewChat is defined
+            restartButton.addEventListener('click', startNewChat);
         });
 
     </script>
