@@ -24,191 +24,254 @@
             font-size: 8rem;
             line-height: 1;
             color: #ffbf00; /* Deep Saffron/Amber */
-            text-shadow: 0 4px 6px rgba(128, 0, 0, 0.4);
-            animation: pulse 4s infinite ease-in-out;
+            text-shadow: 0 4px 6px rgba(128, 0, 0, 0.3);
+            animation: pulse 4s infinite;
         }
         @keyframes pulse {
             0% { transform: scale(1); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 0.8; }
         }
-        .input-area {
-            min-height: 150px;
-            background-color: #fff8e8;
-            border: 2px solid #ffbf00;
-            transition: all 0.3s;
+        .chat-message {
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            max-width: 85%;
         }
-        .input-area:focus {
-            border-color: #800000;
-            box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.2);
+        .user-message {
+            background-color: #fce3a3; /* Light saffron */
+            margin-left: auto;
         }
-        .seek-button {
-            background-color: #800000; /* Deep Maroon */
-            transition: background-color 0.3s, transform 0.1s;
+        .model-message {
+            background-color: #e9ecef; /* Light gray for AI */
+            margin-right: auto;
         }
-        .seek-button:hover {
-            background-color: #a02040;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(128, 0, 0, 0.3);
-        }
-        .loading-bar {
-            overflow: hidden;
-            height: 4px;
-            background-color: #ffbf0050;
-            border-radius: 2px;
-        }
-        .loading-bar-inner {
-            width: 100%;
-            height: 100%;
-            background-color: #800000;
-            animation: loading-animation 1.5s infinite linear;
-            transform-origin: left;
-        }
-        @keyframes loading-animation {
-            0% { transform: translateX(-100%) scaleX(0); }
-            50% { transform: translateX(0) scaleX(1); }
-            100% { transform: translateX(100%) scaleX(0); }
+        #chat-output {
+            height: 500px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e2e8f0;
+            padding-right: 16px;
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
     <div class="moksha-container">
         
-        <header class="text-center mb-8">
-            <div class="om-symbol mx-auto" aria-hidden="true">ॐ</div>
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Moksha AI</h1>
-            <p class="text-lg text-gray-600">A Universal Dharma Guide</p>
-            <p class="text-sm text-gray-500 mt-1">Built by **Jaiprakash Thakur**</p> 
+        <header class="text-center pb-4 border-b border-gray-200">
+            <div class="om-symbol mx-auto mb-2">ॐ</div>
+            <h1 class="text-4xl font-bold text-gray-800">Moksha AI</h1>
+            <p class="text-sm text-gray-500 mt-1">Built by **Jaiprakash Thakur**</p>
+            <p class="text-md text-gray-600">Universal Dharma Guide (Sanatana, Buddhist, Jain, Sikh Inquiry)</p>
         </header>
 
-        <main>
-            <div id="chat-output" class="mb-6 p-4 bg-gray-50 rounded-lg h-96 overflow-y-auto border border-gray-200">
-                <p class="text-gray-500">Welcome to Moksha AI. I specialize in Sanatana, Buddhist, Jain, and Sikh philosophies. How may I assist your path of inquiry?</p>
+        <div class="flex justify-between items-center pt-4 pb-4">
+            <button id="restart-button" onclick="startNewChat()" class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150">
+                Restart Chat
+            </button>
+            <div class="flex items-center space-x-3">
+                <label for="language-selector" class="text-sm text-gray-700">Reply Language:</label>
+                
+                <select id="language-selector" class="p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-amber-500 focus:border-amber-500">
+                    <option value="English">English (Default)</option>
+                    <option value="Hindi">हिन्दी (Hindi)</option>
+                    <option value="Spanish">Español (Spanish)</option>
+                    <option value="Mandarin Chinese">普通话 (Mandarin Chinese)</option>
+                    <option value="Arabic">العربية (Arabic)</option>
+                    <option value="Bengali">বাংলা (Bengali)</option>
+                    <option value="French">Français (French)</option>
+                    <option value="Russian">Русский (Russian)</option>
+                    <option value="Portuguese">Português (Portuguese)</option>
+                    <option value="Urdu">اردو (Urdu)</option>
+                    <option value="Indonesian">Bahasa Indonesia (Indonesian)</option>
+                    <option value="German">Deutsch (German)</option>
+                    <option value="Japanese">日本語 (Japanese)</option>
+                    <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="Marathi">मराठी (Marathi)</option>
+                    <option value="Telugu">తెలుగు (Telugu)</option>
+                    <option value="Turkish">Türkçe (Turkish)</option>
+                    <option value="Tamil">தமிழ் (Tamil)</option>
+                    <option value="Vietnamese">Tiếng Việt (Vietnamese)</option>
+                    <option value="Korean">한국어 (Korean)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="chat-output" class="pt-4 mb-4">
             </div>
 
-            <div class="flex flex-col space-y-4">
-                
-                <div class="flex justify-end items-center space-x-2">
-                    <label for="language-selector" class="text-sm font-medium text-gray-700">Choose Reply Language:</label>
-                    <select id="language-selector" class="p-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-maroon-600 focus:border-maroon-600">
-                        <option value="English">English (Default)</option>
-                        <option value="Hindi">हिन्दी (Hindi)</option>
-                        <option value="Sanskrit">संस्कृतम् (Sanskrit)</option>
-                        <option value="Tamil">தமிழ் (Tamil)</option>
-                        <option value="Bengali">বাংলা (Bengali)</option>
-                    </select>
-                </div>
-                <textarea id="user-input" class="input-area p-4 rounded-lg focus:outline-none resize-none text-gray-700" placeholder="Ask a question about Sanatana Dharma, the Buddha, Jainism, or Sikhism..."></textarea>
-                
-                <div id="loading-indicator" class="loading-bar hidden">
-                    <div class="loading-bar-inner"></div>
-                </div>
-
-                <button id="seek-button" class="seek-button text-white font-bold py-3 rounded-lg shadow-md hover:shadow-xl focus:outline-none">
-                    Seek Truth (Dharma Inquiry)
-                </button>
+        <div id="file-display" class="mb-2 text-sm text-gray-600 flex flex-wrap gap-2">
             </div>
-        </main>
+
+        <div id="chat-input-area" class="flex space-x-3 items-end pt-4 border-t border-gray-200">
+            
+            <div class="flex items-center space-x-2">
+                <label for="file-upload" id="upload-button" class="cursor-pointer p-3 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition duration-150" title="Attach Image or File">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                </label>
+                <input type="file" id="file-upload" multiple accept="image/*, application/pdf, text/*" class="hidden">
+            </div>
+            <textarea id="user-input" placeholder="Ask about Sanatana Dharma, the Buddha's teachings, Jainism, or Sikhism..." 
+                      class="flex-grow p-3 border border-gray-300 rounded-xl resize-none focus:ring-amber-500 focus:border-amber-500" 
+                      rows="3"></textarea>
+                      
+            <button id="seek-button" 
+                    class="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition duration-150 h-12 flex items-center justify-center">
+                Seek Truth
+            </button>
+        </div>
+
     </div>
 
     <script>
-        // 1. **CRITICAL SECURITY NOTE:** Replace this with your actual key
-        const API_KEY = "AIzaSyC4UTFOHmR6kLQN-iks4USfOu41GFWOwJY"; // 🛑 PASTE YOUR CORRECT, ACTIVE KEY HERE!
-        const MODEL_NAME = "gemini-2.5-flash"; 
+        // *** CRITICAL SECURITY WARNING ***
+        // A real API key should NEVER be stored directly in public frontend code (like this HTML file).
+        // It should be handled by a secure backend/proxy server. For now, we use a placeholder.
+        const GEMINI_API_KEY = "AIzaSyD660EaYuAGFz_nt1lwcLf4O4m-n1AidNw"; 
 
-        // 2. **THE DHARMA GUARDRAIL (System Prompt) - Now includes a placeholder for the language rule**
-        const BASE_SYSTEM_INSTRUCTION = `
-            You are a specialized AI named Moksha AI, a Universal Dharma Guide.
-            Your sole function is to provide information and philosophical insights
-            related to the Sanatana, Buddhist, Jain, and Sikh traditions.
+        // Initialize the Gemini AI client
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        let chat; // The chat object will store the conversation history
 
-            RULES:
-            1.  **Scope:** Only answer questions directly concerning Sanatana Dharma, Buddhism, Jainism, or Sikhism.
-            2.  **Breadth:** When discussing Sanatana Dharma and the Buddha, emphasize the tradition's acceptance of diverse views and paths to truth, avoiding strict Western categorization as separate, divided religions. Treat the Buddha's teachings as a powerful, distinct philosophical school (Dharma) within the broader Indian tradition of inquiry.
-            3.  **Refusal:** For *any* question outside of these four traditions (e.g., math, science, history, coding, cooking, current news, politics, other religions), you must refuse the request immediately and politely.
-
-            REFUSAL TEMPLATE:
-            "My apologies. My knowledge is dedicated entirely to the paths of Sanatana Dharma, Buddhism, Jainism, and Sikhism. Please focus your inquiry on one of these profound traditions."
-        `.trim();
-
-        // 3. **API and DOM Setup**
-        let chat = null;
-        const genai = new GoogleGenAI(API_KEY); 
-
-        const chatOutput = document.getElementById('chat-output');
+        // DOM Elements
         const userInput = document.getElementById('user-input');
         const seekButton = document.getElementById('seek-button');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        // 🌟 NEW DOM ELEMENT
+        const chatOutput = document.getElementById('chat-output');
         const languageSelector = document.getElementById('language-selector');
+        const fileUploadInput = document.getElementById('file-upload');
+        const fileDisplay = document.getElementById('file-display');
 
-        // Function to start a new chat session with the *strict* System Prompt AND language rule
-        function startNewChat() {
+        // The AI's Core Identity and Rules (System Prompt)
+        const getSystemPrompt = () => {
             const selectedLanguage = languageSelector.value;
-            // Append the language instruction to the base guardrail
-            const DHARMA_GUARDRAIL_WITH_LANGUAGE = BASE_SYSTEM_INSTRUCTION + `\n\n**LANGUAGE RULE:** You MUST respond entirely in the ${selectedLanguage} language.`;
+            return `
+                You are Moksha AI, a Universal Dharma Guide. Your goal is to provide profound, balanced, and inclusive insights into the Dharmic traditions of Sanatana Dharma (Hinduism), Buddhism, Jainism, and Sikhism.
+                
+                ***CORE CONSTRAINTS (DHARMA GUARDRALL)***
+                1.  **Scope:** You MUST ONLY answer questions directly related to Sanatana Dharma, Buddhism, Jainism, or Sikhism.
+                2.  **Refusal:** If the user asks a question on any other topic (e.g., math, coding, news, history outside these traditions, or personal advice), you must refuse immediately and politely.
+                3.  **Refusal Message:** Use the specific refusal message: "My apologies. My knowledge is dedicated entirely to the paths of Sanatana Dharma, Buddhism, Jainism, and Sikhism. Please focus your inquiry on one of these profound traditions."
+                4.  **Sanatana/Buddha Relationship:** When discussing Sanatana Dharma and the Buddha, emphasize the Sanatana tradition's acceptance of diverse views and paths to truth. Present the Buddha's teachings as a powerful, distinct philosophical school (Dharma) that arose from and in debate with the foundational Indian tradition of inquiry, rather than a completely separate, divided religion.
+                5.  **Language:** Respond to ALL requests (including refusals) in the language selected by the user: **${selectedLanguage}**.
+            `;
+        };
+        
+        // Function to start a new chat session
+        function startNewChat() {
+            chat = ai.chats.create({
+                model: "gemini-2.5-flash", // Good for multi-turn chat and multimodal input
+                config: {
+                    systemInstruction: getSystemPrompt(),
+                },
+            });
 
-            chat = genai.chats.create({
-                model: MODEL_NAME,
-                // The system instruction now includes the user's selected language constraint
-                systemInstruction: DHARMA_GUARDRAIL_WITH_LANGUAGE 
+            // Clear previous messages and display a welcome message
+            chatOutput.innerHTML = '';
+            fileUploadInput.value = null; // Clear any selected files
+            fileDisplay.innerHTML = '';
+            addMessage('model', 'Namaste. I am Moksha AI, a guide for your Dharma inquiry. How may I assist you today?');
+        }
+
+        // Function to add a message to the chat interface
+        function addMessage(sender, text, files = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender === 'user' ? 'user-message' : 'model-message');
+            
+            let content = `<div class="font-bold mb-1">${sender === 'user' ? 'You' : 'Moksha AI'}</div>`;
+            
+            // Add images/file names if they exist
+            if (files.length > 0) {
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                content += `<p class="text-xs text-gray-500 italic mb-2">Attached Files: ${fileNames}</p>`;
+            }
+
+            // Display text
+            content += `<p>${text.replace(/\n/g, '<br>')}</p>`;
+
+            messageDiv.innerHTML = content;
+            chatOutput.appendChild(messageDiv);
+            chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll to bottom
+        }
+
+        // 🌟 NEW: Function to read a file and convert it to a format the Gemini API understands
+        function fileToGenerativePart(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target.result.split(',')[1];
+                    resolve({
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: file.type
+                        }
+                    });
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
             });
         }
 
-        function addMessage(role, text) {
-            // ... (Message display logic remains the same) ...
-            const messageDiv = document.createElement('div');
-            messageDiv.className = role === 'user' 
-                ? 'text-right mb-2' 
-                : 'text-left mb-2';
-            
-            const contentSpan = document.createElement('span');
-            contentSpan.className = role === 'user' 
-                ? 'inline-block bg-maroon-600 text-white p-3 rounded-lg max-w-lg shadow-md seek-button'
-                : 'inline-block bg-gray-200 text-gray-800 p-3 rounded-lg max-w-lg shadow-md';
-            
-            contentSpan.innerHTML = text.replace(/\n/g, '<br>');
+        // 🌟 NEW: Event listener to display the file names when selected
+        fileUploadInput.addEventListener('change', () => {
+            fileDisplay.innerHTML = ''; // Clear previous
+            if (fileUploadInput.files.length > 0) {
+                for (let i = 0; i < fileUploadInput.files.length; i++) {
+                    const file = fileUploadInput.files[i];
+                    const span = document.createElement('span');
+                    span.classList.add('px-2', 'py-1', 'bg-blue-100', 'rounded-full');
+                    span.textContent = `Attached: ${file.name}`;
+                    fileDisplay.appendChild(span);
+                }
+            }
+        });
 
-            messageDiv.appendChild(contentSpan);
-            chatOutput.appendChild(messageDiv);
-            chatOutput.scrollTop = chatOutput.scrollHeight;
-        }
-
+        // Function to send the message and get the AI response
         async function sendMessage() {
-            // The chat session is restarted to include the latest language choice
-            startNewChat(); 
+            const userText = userInput.value.trim();
+            const files = fileUploadInput.files;
 
-            const message = userInput.value.trim();
-            if (!message) return;
+            if (!userText && files.length === 0) return; // Do nothing if input is empty
 
-            // ... (Message sending logic remains the same) ...
-            userInput.value = '';
-            addMessage('user', message);
             seekButton.disabled = true;
-            seekButton.textContent = "Processing Wisdom...";
-            loadingIndicator.classList.remove('hidden');
+            seekButton.textContent = "Processing...";
+            
+            addMessage('user', userText, files);
+            userInput.value = ''; // Clear input field
 
             try {
-                const response = await chat.sendMessage({ message: message });
-                const responseText = response.text;
+                // 1. Prepare Content for AI
+                const imageParts = await Promise.all(Array.from(files).map(fileToGenerativePart));
+                
+                // Combine the image parts with the user's text
+                const contents = [...imageParts, userText];
 
-                addMessage('model', responseText);
+                // 2. Call the AI
+                const response = await chat.sendMessage({ contents: contents });
+
+                // 3. Display the response
+                addMessage('model', response.text);
+
             } catch (error) {
                 console.error("AI Error:", error);
-                addMessage('model', "I cannot reach the source of knowledge right now. Please check the API key or try again later.");
+                addMessage('model', "Apologies, the Moksha AI cannot reach the source of knowledge right now. Please check the API key or try again later. (Error: " + error.message + ")");
             } finally {
+                // Reset state
                 seekButton.disabled = false;
-                seekButton.textContent = "Seek Truth (Dharma Inquiry)";
-                loadingIndicator.classList.add('hidden');
+                seekButton.textContent = "Seek Truth";
+                
+                // Clear files after sending
+                fileUploadInput.value = null; 
+                fileDisplay.innerHTML = '';
                 userInput.focus();
             }
         }
 
         // 🌟 NEW: Restart the chat session whenever the user changes the language selector
         languageSelector.addEventListener('change', () => {
-             // Display a message that the language has been updated
-             addMessage('model', `Reply language has been set to **${languageSelector.value}**.`);
+             startNewChat(); // Restart the chat to load the new system prompt
+             addMessage('model', `Reply language has been reset and set to **${languageSelector.value}**.`);
         });
 
 
@@ -229,13 +292,3 @@
     </script>
 </body>
 </html>
-Key Changes Explained
-HTML Element Added: We added a new <select> drop-down menu with the ID language-selector to the main section:
-
-HTML
-
-<select id="language-selector" ...>
-    <option value="English">English (Default)</option>
-    <option value="Hindi">हिन्दी (Hindi)</option>
-    ...
-</select>
