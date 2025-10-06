@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moksha AI: Universal Dharma Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* Light sand/saffron background */
+        }
+        .moksha-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .om-symbol {
+            font-size: 8rem;
+            line-height: 1;
+            color: #ffbf00; /* Deep Saffron/Amber */
+            text-shadow: 0 4px 6px rgba(128, 0, 0, 0.3);
+            animation: pulse 4s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .chat-message {
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+        .user-message {
+            background-color: #fce3a3; /* Light saffron */
+            margin-left: auto;
+        }
+        .model-message {
+            background-color: #e9ecef; /* Light gray for AI */
+            margin-right: auto;
+        }
+        #chat-output {
+            height: 500px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e2e8f0;
+            padding-right: 16px;
+        }
+        /* Simple spinner for loading */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #ffbf00;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="moksha-container">
+        
+        <header class="text-center pb-4 border-b border-gray-200">
+            <div class="om-symbol mx-auto mb-2">ॐ</div>
+            <h1 class="text-4xl font-bold text-gray-800">Moksha AI</h1>
+            <p class="text-sm text-gray-500 mt-1">Built by **Jaiprakash Thakur**</p>
+            <p class="text-md text-gray-600">Universal Dharma Guide (Sanatana, Buddhist, Jain, Sikh Inquiry)</p>
+        </header>
+
+        <div class="flex justify-between items-center pt-4 pb-4">
+            <button id="restart-button" class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150">
+                Restart Chat
+            </button>
+            <div class="flex items-center space-x-3">
+                <label for="language-selector" class="text-sm text-gray-700">Reply Language:</label>
+                
+                <select id="language-selector" class="p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-amber-500 focus:border-amber-500">
+                    <option value="English">English (Default)</option>
+                    <option value="Hindi">हिन्दी (Hindi)</option>
+                    <option value="Spanish">Español (Spanish)</option>
+                    <option value="Mandarin Chinese">普通话 (Mandarin Chinese)</option>
+                    <option value="Arabic">العربية (Arabic)</option>
+                    <option value="Bengali">বাংলা (Bengali)</option>
+                    <option value="French">Français (French)</option>
+                    <option value="Russian">Русский (Russian)</option>
+                    <option value="Portuguese">Português (Portuguese)</option>
+                    <option value="Urdu">اردو (Urdu)</option>
+                    <option value="Indonesian">Bahasa Indonesia (Indonesian)</option>
+                    <option value="German">Deutsch (German)</option>
+                    <option value="Japanese">日本語 (Japanese)</option>
+                    <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="Marathi">मराठी (Marathi)</option>
+                    <option value="Telugu">తెలుగు (Telugu)</option>
+                    <option value="Turkish">Türkçe (Turkish)</option>
+                    <option value="Tamil">தமிழ் (Tamil)</option>
+                    <option value="Vietnamese">Tiếng Việt (Vietnamese)</option>
+                    <option value="Korean">한국어 (Korean)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="chat-output" class="pt-4 mb-4">
+            </div>
+
+        <div id="file-display" class="mb-2 text-sm text-gray-600 flex flex-wrap gap-2">
+            </div>
+
+        <div id="chat-input-area" class="flex space-x-3 items-end pt-4 border-t border-gray-200">
+            
+            <div class="flex items-center space-x-2">
+                <label for="file-upload" id="upload-button" class="cursor-pointer p-3 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition duration-150" title="Attach Image or File">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                </label>
+                <input type="file" id="file-upload" multiple accept="image/*, application/pdf, text/*" class="hidden">
+            </div>
+            <textarea id="user-input" placeholder="Ask about Sanatana Dharma, the Buddha's teachings, Jainism, or Sikhism..." 
+                      class="flex-grow p-3 border border-gray-300 rounded-xl resize-none focus:ring-amber-500 focus:border-amber-500" 
+                      rows="3"></textarea>
+                      
+            <button id="seek-button" 
+                    class="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition duration-150 h-12 flex items-center justify-center">
+                <span id="button-text">Seek Truth</span>
+                <div id="loading-indicator" class="spinner hidden ml-2"></div>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        
+        // 🛑 IMPORTANT: API KEY IS GONE! It's on the Render server now.
+        // *******************************************************************
+        // YOU MUST CHANGE THIS URL AFTER RENDER GIVES YOU YOUR LIVE SERVER LINK
+        // *******************************************************************
+        const PROXY_SERVER_URL = "YOUR_RENDER_URL_HERE/chat"; 
+
+        // DOM Elements
+        const userInput = document.getElementById('user-input');
+        const seekButton = document.getElementById('seek-button');
+        const chatOutput = document.getElementById('chat-output');
+        const languageSelector = document.getElementById('language-selector');
+        const fileUploadInput = document.getElementById('file-upload');
+        const fileDisplay = document.getElementById('file-display');
+        const loadingIndicator = document.getElementById('loading-indicator'); 
+        const buttonText = document.getElementById('button-text');
+        const restartButton = document.getElementById('restart-button'); 
+
+        // The AI's Core Identity and Rules (System Prompt)
+        const getSystemPrompt = () => {
+            const selectedLanguage = languageSelector.value;
+            return `
+                You are Moksha AI, a Universal Dharma Guide. Your goal is to provide profound, balanced, and inclusive insights into the Dharmic traditions of Sanatana Dharma (Hinduism), Buddhism, Jainism, and Sikhism.
+                
+                ***CORE CONSTRAINTS (DHARMA GUARDRALL)***
+                1.  **Scope:** You MUST ONLY answer questions directly related to Sanatana Dharma, Buddhism, Jainism, or Sikhism.
+                2.  **Refusal:** If the user asks a question on any other topic (e.g., math, coding, news, history outside these traditions, or personal advice), you must refuse immediately and politely.
+                3.  **Refusal Message:** Use the specific refusal message: "My apologies. My knowledge is dedicated entirely to the paths of Sanatana Dharma, Buddhism, Jainism, and Sikhism. Please focus your inquiry on one of these profound traditions."
+                4.  **Sanatana/Buddha Relationship:** When discussing Sanatana Dharma and the Buddha, emphasize the Sanatana tradition's acceptance of diverse views and paths to truth. Present the Buddha's teachings as a powerful, distinct philosophical school (Dharma) that arose from and in debate with the foundational Indian tradition of inquiry, rather than a completely separate, divided religion.
+                5.  **Language:** Respond to ALL requests (including refusals) in the language selected by the user: **${selectedLanguage}**.
+            `;
+        };
+        
+        // Function to start a new chat session (no longer needs to create a chat object)
+        function startNewChat() {
+            // Clear previous messages and display a welcome message
+            chatOutput.innerHTML = '';
+            fileUploadInput.value = null; // Clear any selected files
+            fileDisplay.innerHTML = '';
+            addMessage('model', 'Namaste. I am Moksha AI, a guide for your Dharma inquiry. How may I assist you today?');
+        }
+
+        // Function to add a message to the chat interface
+        function addMessage(sender, text, files = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender === 'user' ? 'user-message' : 'model-message');
+            
+            let content = `<div class="font-bold mb-1">${sender === 'user' ? 'You' : 'Moksha AI'}</div>`;
+            
+            // Add images/file names if they exist
+            if (files.length > 0) {
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                content += `<p class="text-xs text-gray-500 italic mb-2">Attached Files: ${fileNames}</p>`;
+            }
+
+            // Display text
+            content += `<p>${text.replace(/\n/g, '<br>')}</p>`;
+
+            messageDiv.innerHTML = content;
+            chatOutput.appendChild(messageDiv);
+            chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll to bottom
+        }
+
+        // Function to read a file and convert it to a format the Gemini API understands
+        function fileToGenerativePart(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target.result.split(',')[1];
+                    resolve({
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: file.type
+                        }
+                    });
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Event listener to display the file names when selected
+        fileUploadInput.addEventListener('change', () => {
+            fileDisplay.innerHTML = ''; // Clear previous
+            if (fileUploadInput.files.length > 0) {
+                for (let i = 0; i < fileUploadInput.files.length; i++) {
+                    const file = fileUploadInput.files[i];
+                    const span = document.createElement('span');
+                    span.classList.add('px-2', 'py-1', 'bg-blue-100', 'rounded-full');
+                    span.textContent = `Attached: ${file.name}`;
+                    fileDisplay.appendChild(span);
+                }
+            }
+        });
+
+        // Function to send the message and get the AI response using the SECURE PROXY SERVER
+        async function sendMessage() {
+            const userText = userInput.value.trim();
+            const files = fileUploadInput.files;
+
+            if (!userText && files.length === 0) return; // Do nothing if input is empty
+
+            seekButton.disabled = true;
+            buttonText.textContent = "Processing...";
+            loadingIndicator.classList.remove('hidden');
+            
+            addMessage('user', userText, files);
+            userInput.value = ''; // Clear input field
+
+            try {
+                // 1. Prepare Content for Server
+                const imageParts = await Promise.all(Array.from(files).map(fileToGenerativePart));
+                
+                // Combine the image parts with the user's text
+                const contents = [...imageParts, userText];
+                const systemInstruction = getSystemPrompt(); // Get the current system prompt
+
+                // 2. Call the new SECURE PROXY SERVER
+                const response = await fetch(PROXY_SERVER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ contents, systemInstruction }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 3. Display the response from the secure server
+                    addMessage('model', data.text);
+                } else {
+                    // Handle server errors (e.g., if the key is invalid on the server)
+                    console.error("Server Error:", data.error || "Unknown server error");
+                    addMessage('model', "Apologies, the Moksha AI secure server failed to get a response. Please check the server logs.");
+                }
+
+            } catch (error) {
+                console.error("Network or Fetch Error:", error);
+                addMessage('model', "Apologies, the Moksha AI cannot reach the secure knowledge server.");
+            } finally {
+                // Reset state
+                seekButton.disabled = false;
+                buttonText.textContent = "Seek Truth";
+                loadingIndicator.classList.add('hidden');
+                
+                // Clear files after sending
+                fileUploadInput.value = null; 
+                fileDisplay.innerHTML = '';
+                userInput.focus();
+            }
+        }
+
+        // Restart the chat session whenever the user changes the language selector
+        languageSelector.addEventListener('change', () => {
+             startNewChat(); // Restart the chat to load the new system prompt
+             addMessage('model', `Reply language has been reset and set to **${languageSelector.value}**.`);
+        });
+
+
+        // Event Listeners
+        seekButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            startNewChat();
+            restartButton.addEventListener('click', startNewChat);
+        });
+
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
