@@ -52,6 +52,18 @@
             border-bottom: 1px solid #e2e8f0;
             padding-right: 16px;
         }
+        /* Simple spinner for loading */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #ffbf00;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -119,19 +131,18 @@
                       
             <button id="seek-button" 
                     class="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition duration-150 h-12 flex items-center justify-center">
-                Seek Truth
+                <span id="button-text">Seek Truth</span>
+                <div id="loading-indicator" class="spinner hidden ml-2"></div>
             </button>
         </div>
 
     </div>
 
     <script>
-        // *** CRITICAL SECURITY WARNING ***
-        // A real API key should NEVER be stored directly in public frontend code (like this HTML file).
-        // It should be handled by a secure backend/proxy server. For now, we use a placeholder.
-        const GEMINI_API_KEY = "AIzaSyD660EaYuAGFz_nt1lwcLf4O4m-n1AidNw"; 
+        // *** WARNING: API KEY IS EXPOSED FOR PRACTICE ONLY ***
+        const GEMINI_API_KEY = "AIzaSyD660EaYuAGFz_nt1lwcLf4O4m-n1AidNw"; // YOUR API KEY IS HERE
 
-        // Initialize the Gemini AI client
+        // Initialize the Gemini AI client with the exposed key
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         let chat; // The chat object will store the conversation history
 
@@ -142,6 +153,8 @@
         const languageSelector = document.getElementById('language-selector');
         const fileUploadInput = document.getElementById('file-upload');
         const fileDisplay = document.getElementById('file-display');
+        const loadingIndicator = document.getElementById('loading-indicator'); // Added reference
+        const buttonText = document.getElementById('button-text'); // Added reference
 
         // The AI's Core Identity and Rules (System Prompt)
         const getSystemPrompt = () => {
@@ -195,7 +208,7 @@
             chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll to bottom
         }
 
-        // 🌟 NEW: Function to read a file and convert it to a format the Gemini API understands
+        // Function to read a file and convert it to a format the Gemini API understands
         function fileToGenerativePart(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -213,7 +226,7 @@
             });
         }
 
-        // 🌟 NEW: Event listener to display the file names when selected
+        // Event listener to display the file names when selected
         fileUploadInput.addEventListener('change', () => {
             fileDisplay.innerHTML = ''; // Clear previous
             if (fileUploadInput.files.length > 0) {
@@ -227,7 +240,7 @@
             }
         });
 
-        // Function to send the message and get the AI response
+        // Function to send the message and get the AI response (using the insecure SDK method)
         async function sendMessage() {
             const userText = userInput.value.trim();
             const files = fileUploadInput.files;
@@ -235,7 +248,8 @@
             if (!userText && files.length === 0) return; // Do nothing if input is empty
 
             seekButton.disabled = true;
-            seekButton.textContent = "Processing...";
+            buttonText.textContent = "Processing...";
+            loadingIndicator.classList.remove('hidden');
             
             addMessage('user', userText, files);
             userInput.value = ''; // Clear input field
@@ -247,7 +261,7 @@
                 // Combine the image parts with the user's text
                 const contents = [...imageParts, userText];
 
-                // 2. Call the AI
+                // 2. Call the AI directly using the SDK (insecure)
                 const response = await chat.sendMessage({ contents: contents });
 
                 // 3. Display the response
@@ -255,11 +269,13 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                addMessage('model', "Apologies, the Moksha AI cannot reach the source of knowledge right now. Please check the API key or try again later. (Error: " + error.message + ")");
+                // Note: The most common error here is an invalid or expired API key.
+                addMessage('model', "Apologies, the Moksha AI cannot reach the source of knowledge right now. Please check the API key status or try again later. (Error: " + error.message + ")");
             } finally {
                 // Reset state
                 seekButton.disabled = false;
-                seekButton.textContent = "Seek Truth";
+                buttonText.textContent = "Seek Truth";
+                loadingIndicator.classList.add('hidden');
                 
                 // Clear files after sending
                 fileUploadInput.value = null; 
@@ -268,7 +284,7 @@
             }
         }
 
-        // 🌟 NEW: Restart the chat session whenever the user changes the language selector
+        // Restart the chat session whenever the user changes the language selector
         languageSelector.addEventListener('change', () => {
              startNewChat(); // Restart the chat to load the new system prompt
              addMessage('model', `Reply language has been reset and set to **${languageSelector.value}**.`);
