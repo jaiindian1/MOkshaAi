@@ -128,7 +128,7 @@
             <textarea id="user-input" placeholder="Ask about Sanatana Dharma, the Buddha's teachings, Jainism, or Sikhism..." 
                       class="flex-grow p-3 border border-gray-300 rounded-xl resize-none focus:ring-amber-500 focus:border-amber-500" 
                       rows="3"></textarea>
-                      
+                    
             <button id="seek-button" 
                     class="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition duration-150 h-12 flex items-center justify-center">
                 <span id="button-text">Seek Truth</span>
@@ -142,7 +142,7 @@
         // *** CRITICAL: SECURE PROXY SETUP (New, Correct Code) ***
         // The key is now hidden on the Render server.
         // The frontend must talk to the server (your Render URL) to get a secure response.
-        const PROXY_SERVER_URL = "https://mokshaai.onrender.com/chat";
+        const PROXY_SERVER_URL = "https://mokshaai-1.onrender.com/chat"; // <--- CORRECTED URL HERE
         
         // The 'ai' client is now a simple placeholder that handles the fetch request to your proxy.
         // We don't need the official SDK anymore, as the server does the heavy lifting.
@@ -163,7 +163,8 @@
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                                prompt: userMessage,
+                                // The body format has been corrected to match what the server.js file expects
+                                contents: contents.contents, 
                                 systemInstruction: systemInstruction,
                                 // NOTE: Multi-modal content (files) is not yet supported in this secure proxy design
                             })
@@ -247,9 +248,6 @@
             chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll to bottom
         }
 
-        // NOTE: The fileToGenerativePart function is no longer needed since the proxy doesn't handle files yet.
-        // I have removed it to keep the code clean.
-
         // Event listener to display the file names when selected
         fileUploadInput.addEventListener('change', () => {
             fileDisplay.innerHTML = ''; // Clear previous
@@ -281,7 +279,8 @@
 
             try {
                 // 1. Prepare Content for AI
-                const contents = [userText];
+                // The server.js expects the contents to be in the format: { contents: [userText] }
+                const contents = [userText]; 
 
                 // 2. Call the AI securely through the 'chat' object, which now calls the Render server
                 const response = await chat.sendMessage({ contents: contents });
@@ -333,3 +332,11 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
