@@ -1,88 +1,61 @@
-// server.js (Node.js/Express) - Moksha AI Secure Proxy
-
-// 1. IMPORTS & SETUP
-
-// CRITICAL FIX: This is the correct ES Module way to load the .env file.
-// This single line replaces the old 'require' method and prevents the ReferenceError.
-import 'dotenv/config'; 
-
-// Import all other packages using ES Module syntax
+// server.js (The Secure Proxy Server)
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
-import cors from 'cors'; 
+import cors from 'cors';
 
-// Initialize Express App
-const app = express();
-
-// Define the port from the environment variable (Render/local .env) or default to 3000
-const port = process.env.PORT || 3000; 
-
-// ----------------------------------------------------------------------
-// --- Middleware ---
-
-// Allows the website (frontend) to talk to the server
-app.use(cors()); 
-
-// Allows the server to correctly read the JSON body (the 'prompt' and 'systemInstruction')
-app.use(express.json()); 
-
-// ----------------------------------------------------------------------
-// 2. AI CLIENT INITIALIZATION
-
-// Load the key securely from the environment variable
-const apiKey = process.env.GEMINI_API_KEY;
-
-// Crucial: Check for the key and stop if it's missing (industry standard)
-if (!apiKey) {
-    console.error("FATAL ERROR: GEMINI_API_KEY is not set. Please create a .env file or set it in your hosting environment.");
-    // Exit the process so the server doesn't start without credentials
-    process.exit(1); 
+// 1. Read API Key securely from the Render Environment Variable
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    console.error('FATAL: GEMINI_API_KEY environment variable is not set.');
+    process.exit(1);
 }
 
-const ai = new GoogleGenAI({ apiKey });
+const app = express();
+const port = process.env.PORT || 3000;
 
-// ----------------------------------------------------------------------
-// 3. CORE ROUTE DEFINITION (POST /chat)
+// Middleware to allow ALL origins (temporarily for Render deployment)
+// THIS IS THE CRITICAL FIX: The strict rule was blocking Render's health check.
+app.use(cors()); 
 
+app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
+
+// Initialize AI client
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.send('Moksha AI Proxy Server is running securely and listening for /chat requests.');
+});
+
+// POST endpoint for the chat
 app.post('/chat', async (req, res) => {
     try {
-        // Get the prompt and the optional system instruction from the request body
-        const { prompt, systemInstruction } = req.body;
-        
-        if (!prompt) {
-            return res.status(400).json({ error: "Missing 'prompt' in request body." });
+        // We receive the user's question and the system rules from the front-end
+        const { contents, systemInstruction } = req.body;
+
+        if (!contents || contents.length === 0) {
+            return res.status(400).send({ error: "Missing 'contents' in request body." });
         }
 
-        // Configuration object for the chat session.
-        const chatConfig = {};
-        if (systemInstruction) {
-            // Add the System Instruction to the chat configuration
-            chatConfig.systemInstruction = systemInstruction;
-        }
-
-        // Create the chat session. A new session for each request ensures 
-        // the system instruction is applied to the very first prompt.
-        const chat = ai.chats.create({
+        // Use the AI with the secret key (ONLY on the server)
+        const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            config: chatConfig,
+            contents: contents,
+            config: {
+                systemInstruction: systemInstruction,
+            },
         });
 
-        // Send the prompt message to the chat session.
-        const result = await chat.sendMessage({ message: prompt }); 
-
-        // Send the final text response back to the website
-        res.json({ text: result.text });
+        // Send ONLY the AI's response text back to the GitHub Page
+        res.json({ text: response.text });
 
     } catch (error) {
-        console.error("Gemini API or Server Error:", error);
-        // For security and cleanliness, only send a generic error to the client
-        res.status(500).json({ error: "Internal Server Error. Please check server logs for details." });
+        console.error("Gemini API Error:", error);
+        res.status(500).send({ error: "An error occurred while communicating with the AI server." });
     }
 });
 
-// ----------------------------------------------------------------------
-// 4. SERVER LISTEN 
+// 3. Start the Server
 app.listen(port, () => {
-    console.log(`\n🤖 Moksha AI Proxy Server is running!`);
-    console.log(`🌍 Listening on port ${port} (http://localhost:${port})`);
+    console.log(`Server listening on port ${port}`);
 });
