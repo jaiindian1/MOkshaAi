@@ -11,10 +11,10 @@ if (!GEMINI_API_KEY) {
 }
 
 const app = express();
+// The server will use the port given by Render, or 3000 if running locally.
 const port = process.env.PORT || 3000;
 
-// Middleware to allow ALL origins (temporarily for Render deployment)
-// THIS IS THE CRITICAL FIX: The strict rule was blocking Render's health check.
+// Middleware to allow ALL origins (necessary for GitHub Pages to talk to Render)
 app.use(cors()); 
 
 app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
@@ -22,7 +22,7 @@ app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
 // Initialize AI client
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-// Health check endpoint
+// Health check endpoint (Render uses this to check if the server is alive)
 app.get('/', (req, res) => {
     res.send('Moksha AI Proxy Server is running securely and listening for /chat requests.');
 });
@@ -56,6 +56,8 @@ app.post('/chat', async (req, res) => {
 });
 
 // 3. Start the Server
-app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+// FIX: We MUST specify '0.0.0.0' so the server listens on the correct network interface
+// that Render can see. This prevents the "Timed out" error.
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server listening on port ${port} on all interfaces.`);
 });
