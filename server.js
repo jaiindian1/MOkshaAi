@@ -15,13 +15,10 @@ const app = express();
 // The server will use the port given by Render, or 3000 if running locally.
 const port = process.env.PORT || 3000;
 
-// ⭐ FINAL, DEFINITIVE CORS FIX:
-// 1. Array origin allows URLs with and without the trailing slash (e.g., /MOkshaAi and /MOkshaAi/).
-// 2. 'OPTIONS' method is explicitly allowed to pass the mandatory "Preflight Request" check.
-app.use(cors({
-    origin: ['https://jaiindian1.github.io/MOkshaAi', 'https://jaiindian1.github.io/MOkshaAi/'], 
-    methods: ['POST', 'OPTIONS'], // <--- Allows the browser's necessary handshake
-}));
+// ⭐ CRITICAL TEMPORARY DEBUG FIX: Allowing all origins to confirm the CORS issue.
+// If the chat works now, the problem was definitely related to how GitHub sends the URL.
+// IMPORTANT: This makes the server less secure temporarily. We must secure it again later.
+app.use(cors()); 
 
 // Middleware to parse JSON bodies, allowing larger requests for file uploads
 app.use(express.json({ limit: '10mb' })); 
@@ -65,7 +62,7 @@ app.post('/chat', async (req, res) => {
 });
 
 // 3. Start the Server
-// We MUST specify '0.0.0.0' so the server listens on the correct network interface for Render.
+// We specify '0.0.0.0' to ensure the server listens on the correct network interface for Render.
 app.listen(port, '0.0.0.0', () => {
     console.log(`Moksha AI Server listening on port ${port} on all interfaces.`);
 });
