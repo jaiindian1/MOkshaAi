@@ -1,4 +1,4 @@
-// server.js (The Secure Proxy Server)
+// server.js (The Secure Proxy Server for Moksha AI)
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import cors from 'cors';
@@ -7,28 +7,31 @@ import cors from 'cors';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
     console.error('FATAL: GEMINI_API_KEY environment variable is not set.');
-    process.exit(1);
+    // Exit the process if the key is missing to prevent security risks
+    process.exit(1); 
 }
 
 const app = express();
 // The server will use the port given by Render, or 3000 if running locally.
 const port = process.env.PORT || 3000;
 
-// ⭐ THE FIX: Middleware to allow ONLY your specific GitHub Page to talk to this server securely
-// This is more secure than app.use(cors()) because it limits who can access the server.
+// ⭐ CRITICAL FIX: Middleware to allow ONLY your specific GitHub Page to talk to this server securely
+// This fixes the security issue and the "cannot reach server" error.
 app.use(cors({
-    origin: 'https://jaiindian1.github.io/MOkshaAi', // <--- **This is the secure address**
-    methods: ['POST'],
+    origin: 'https://jaiindian1.github.io/MOkshaAi', // <--- Your secure GitHub page URL
+    methods: ['POST'], // <--- ONLY allows the chat function to work
 }));
 
-app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
+// Middleware to parse JSON bodies, allowing larger requests for file uploads
+app.use(express.json({ limit: '10mb' })); 
 
-// Initialize AI client
+// Initialize AI client using the secure environment variable
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // Health check endpoint (Render uses this to check if the server is alive)
 app.get('/', (req, res) => {
-    res.send('Moksha AI Proxy Server is running securely and listening for /chat requests.');
+    // We confirm the server is running and ready for POST requests
+    res.send('Moksha AI Proxy Server is running securely and listening for /chat POST requests.');
 });
 
 // POST endpoint for the chat
@@ -54,14 +57,14 @@ app.post('/chat', async (req, res) => {
         res.json({ text: response.text });
 
     } catch (error) {
-        console.error("Gemini API Error:", error);
+        // Log the full error to the Render logs for debugging
+        console.error("Gemini API Error:", error); 
         res.status(500).send({ error: "An error occurred while communicating with the AI server." });
     }
 });
 
 // 3. Start the Server
-// FIX: We MUST specify '0.0.0.0' so the server listens on the correct network interface
-// that Render can see. This prevents the "Timed out" error.
+// We specify '0.0.0.0' to ensure the server listens on the correct network interface for Render.
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on port ${port} on all interfaces.`);
+    console.log(`Moksha AI Server listening on port ${port} on all interfaces.`);
 });
