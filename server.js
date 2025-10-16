@@ -16,9 +16,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // ⭐ CRITICAL FIX: Middleware to allow ONLY your specific GitHub Page to talk to this server securely
-// This fixes the security issue and the "cannot reach server" error.
+// FIX: Using an ARRAY for 'origin' to allow both the URL with and without the trailing slash ('/').
 app.use(cors({
-    origin: 'https://jaiindian1.github.io/MOkshaAi', // <--- Your secure GitHub page URL
+    origin: ['https://jaiindian1.github.io/MOkshaAi', 'https://jaiindian1.github.io/MOkshaAi/'], // <--- FINAL, CORRECTED ORIGIN ARRAY
     methods: ['POST'], // <--- ONLY allows the chat function to work
 }));
 
@@ -64,7 +64,7 @@ app.post('/chat', async (req, res) => {
 });
 
 // 3. Start the Server
-// 🛑 CRITICAL FIX 2: We MUST specify '0.0.0.0' so the server listens on the correct network interface for Render.
+// We MUST specify '0.0.0.0' so the server listens on the correct network interface for Render.
 app.listen(port, '0.0.0.0', () => {
     console.log(`Moksha AI Server listening on port ${port} on all interfaces.`);
 });
