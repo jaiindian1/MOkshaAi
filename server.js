@@ -64,7 +64,7 @@ app.post('/chat', async (req, res) => {
 });
 
 // 3. Start the Server
-// We specify '0.0.0.0' to ensure the server listens on the correct network interface for Render.
+// 🛑 CRITICAL FIX 2: We MUST specify '0.0.0.0' so the server listens on the correct network interface for Render.
 app.listen(port, '0.0.0.0', () => {
     console.log(`Moksha AI Server listening on port ${port} on all interfaces.`);
 });
