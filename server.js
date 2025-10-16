@@ -15,11 +15,12 @@ const app = express();
 // The server will use the port given by Render, or 3000 if running locally.
 const port = process.env.PORT || 3000;
 
-// ⭐ CRITICAL FIX: Middleware to allow ONLY your specific GitHub Page to talk to this server securely
-// FIX: Using an ARRAY for 'origin' to allow both the URL with and without the trailing slash ('/').
+// ⭐ FINAL, DEFINITIVE CORS FIX:
+// 1. Array origin allows URLs with and without the trailing slash (e.g., /MOkshaAi and /MOkshaAi/).
+// 2. 'OPTIONS' method is explicitly allowed to pass the mandatory "Preflight Request" check.
 app.use(cors({
-    origin: ['https://jaiindian1.github.io/MOkshaAi', 'https://jaiindian1.github.io/MOkshaAi/'], // <--- FINAL, CORRECTED ORIGIN ARRAY
-    methods: ['POST'], // <--- ONLY allows the chat function to work
+    origin: ['https://jaiindian1.github.io/MOkshaAi', 'https://jaiindian1.github.io/MOkshaAi/'], 
+    methods: ['POST', 'OPTIONS'], // <--- Allows the browser's necessary handshake
 }));
 
 // Middleware to parse JSON bodies, allowing larger requests for file uploads
