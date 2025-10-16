@@ -14,8 +14,12 @@ const app = express();
 // The server will use the port given by Render, or 3000 if running locally.
 const port = process.env.PORT || 3000;
 
-// Middleware to allow ALL origins (necessary for GitHub Pages to talk to Render)
-app.use(cors()); 
+// ⭐ THE FIX: Middleware to allow ONLY your specific GitHub Page to talk to this server securely
+// This is more secure than app.use(cors()) because it limits who can access the server.
+app.use(cors({
+    origin: 'https://jaiindian1.github.io/MOkshaAi', // <--- **This is the secure address**
+    methods: ['POST'],
+}));
 
 app.use(express.json({ limit: '10mb' })); // Allow large requests (for files)
 
